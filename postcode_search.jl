@@ -5,13 +5,10 @@ using CSV, DataFrames, Statistics, Arrow, HivePartitioner
 # read CSV with no column names
 df = CSV.read("data/codepoint.csv", DataFrame, header=0) # cat *.csv > data/codepoint.csv # codepoint splits the csvs into tiny files
 rename!(df, :Column1 => :postcode)
-df.firstbit = getindex.(df[!, :postcode], Ref(1:3))
+df.first_three = getindex.(df[!, :postcode], Ref(1:3))
+df.first_four = getindex.(df[!, :postcode], Ref(1:4))
 
-stats = combine(groupby(df, :firstbit), nrow)
-
-quantile(stats.nrow, 0.99) # 8k so we're fine
-
-writehivedir((path, table)->Arrow.write(path, table), "postcodes_partitioned", df[!, [:postcode, :firstbit]], [:firstbit]; filename="part0.arrow")
+writehivedir((path, table)->Arrow.write(path, table), "postcodes_partitioned", df[!, [:postcode, :first_three, :first_four]], [:first_three, :first_four]; filename="part0.arrow")
 
 # Add directory listing file - maybe this should be added to HivePartitioner.jl?
 foreach(x -> begin
